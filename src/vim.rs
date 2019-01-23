@@ -100,6 +100,24 @@ impl LanguageClient {
         self.vim()?.notify("setloclist", parms)?;
         Ok(())
     }
+
+    pub fn create_namespace(&self, name: &str) -> Fallible<i64> {
+        self.vim()?.call("nvim_create_namespace", [name])
+    }
+
+    pub fn buf_set_virtual_text(
+        &self,
+        buf_id: i64,
+        ns_id: i64,
+        line: u64,
+        text: &str,
+        hl_group: &str,
+    ) -> Fallible<i64> {
+        self.vim()?.call(
+            "nvim_buf_set_virtual_text",
+            json!([buf_id, ns_id, line, vec![vec![text, hl_group]], {}]),
+        )
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

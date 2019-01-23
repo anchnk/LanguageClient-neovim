@@ -2353,6 +2353,29 @@ impl LanguageClient {
                 .notify("s:AddHighlights", json!([source, highlights]))?;
         }
 
+        let namespace_id = if let Some(namespace_id) = self.get(|state| state.namespace_id)? {
+            namespace_id
+        } else {
+            let namespace_id = self.create_namespace("LanguageClient")?;
+            self.update(|state| {
+                state.namespace_id = Some(namespace_id);
+                Ok(())
+            })?;
+            namespace_id
+        };
+        let mut virtual_texts = HashMap::new();
+        self.get(|state| {
+            for ((_, line), text) in &state.line_diagnostics {
+                if *line >= visible_line_start && *line <= visible_line_end {
+                    virtual_texts.insert(*line, text.clone());
+                }
+            }
+        })?;
+        for (line, text) in &virtual_texts {
+            // FIXME
+            self.buf_set_virtual_text(1, namespace_id, *line, text, "")?;
+        }
+
         info!("End {}", NOTIFICATION__HandleCursorMoved);
         Ok(())
     }
