@@ -308,6 +308,7 @@ pub struct DiagnosticsDisplay {
     pub texthl: String,
     pub signText: String,
     pub signTexthl: String,
+    pub virtualTexthl: String,
 }
 
 impl DiagnosticsDisplay {
@@ -320,6 +321,7 @@ impl DiagnosticsDisplay {
                 texthl: "ALEError".to_owned(),
                 signText: "✖".to_owned(),
                 signTexthl: "ALEErrorSign".to_owned(),
+                virtualTexthl: "Error".to_owned(),
             },
         );
         map.insert(
@@ -329,6 +331,7 @@ impl DiagnosticsDisplay {
                 texthl: "ALEWarning".to_owned(),
                 signText: "⚠".to_owned(),
                 signTexthl: "ALEWarningSign".to_owned(),
+                virtualTexthl: "Todo".to_owned(),
             },
         );
         map.insert(
@@ -338,6 +341,7 @@ impl DiagnosticsDisplay {
                 texthl: "ALEInfo".to_owned(),
                 signText: "ℹ".to_owned(),
                 signTexthl: "ALEInfoSign".to_owned(),
+                virtualTexthl: "Todo".to_owned(),
             },
         );
         map.insert(
@@ -347,6 +351,7 @@ impl DiagnosticsDisplay {
                 texthl: "ALEInfo".to_owned(),
                 signText: "➤".to_owned(),
                 signTexthl: "ALEInfoSign".to_owned(),
+                virtualTexthl: "Todo".to_owned(),
             },
         );
         map

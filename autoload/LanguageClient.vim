@@ -150,7 +150,6 @@ function! s:SetVirtualTexts(bufId, nsId, virtualTexts) abort
     endif
 
     for vt in a:virtualTexts
-        echomsg string(vt)
         call nvim_buf_set_virtual_text(a:bufId, a:nsId, vt['line'], [[vt['text'], vt['hl_group']]], {})
     endfor
 endfunction

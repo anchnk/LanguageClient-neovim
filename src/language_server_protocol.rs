@@ -160,7 +160,7 @@ impl LanguageClient {
             [
                 "get(g:, 'LanguageClient_diagnosticsSignsMax', v:null)",
                 "get(g:, 'LanguageClient_documentHighlightDisplay', {})",
-                "!!s:GetVar('LanguageClient_useVirtualText')",
+                "!!s:GetVar('LanguageClient_useVirtualText', v:true)",
             ]
             .as_ref(),
         )?;
@@ -2384,7 +2384,7 @@ impl LanguageClient {
                         virtual_texts.push(VirtualText {
                             line: *line,
                             text: text.clone(),
-                            hl_group: "".into(),
+                            hl_group: "Todo".into(),
                         });
                     }
                 }
