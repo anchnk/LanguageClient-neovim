@@ -103,6 +103,7 @@ pub struct State {
     pub text_documents: HashMap<String, TextDocumentItem>,
     pub text_documents_metadata: HashMap<String, TextDocumentItemMetadata>,
     // filename => diagnostics.
+    // TODO: convert to filename => line => diagnostics, where line => diagnostics is a TreeMap.
     pub diagnostics: HashMap<String, Vec<Diagnostic>>,
     #[serde(skip_serializing)]
     pub line_diagnostics: HashMap<(String, u64), String>,

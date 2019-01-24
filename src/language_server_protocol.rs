@@ -1864,7 +1864,16 @@ impl LanguageClient {
         // Unify name to avoid mismatch due to case insensitivity.
         let filename = filename.canonicalize();
 
-        let diagnostics = params.diagnostics;
+        let mut diagnostics = params.diagnostics;
+        diagnostics.sort_by_key(
+            // First sort by line.
+            // Then severity descendingly. Error should come last since when processing item comes
+            // later will override its precedance.
+            // Then by character descendingly.
+            |diagnostic| (diagnostic.range.start.line,
+                          -(diagnostic.severity.unwrap_or(DiagnosticSeverity::Hint).to_int().unwrap_or(4) as i64),
+                          -(diagnostic.range.start.line as i64)
+                          ));
 
         self.update(|state| {
             state
@@ -2377,17 +2386,24 @@ impl LanguageClient {
                 namespace_id
             };
             let mut virtual_texts = vec![];
-            self.get(|state| {
-                for ((_, line), text) in &state.line_diagnostics {
-                    if *line >= visible_line_start && *line <= visible_line_end {
-                        // FIXME: hl_group.
-                        virtual_texts.push(VirtualText {
-                            line: *line,
-                            text: text.clone(),
-                            hl_group: "Todo".into(),
-                        });
+            self.update(|state| {
+                if let Some(diagnostics) = state.diagnostics.get(&filename) {
+                    for diagnostic in diagnostics {
+                        if diagnostic.range.start.line >= visible_line_start
+                            && diagnostic.range.start.line <= visible_line_end {
+                            virtual_texts.push(VirtualText {
+                                line: diagnostic.range.start.line,
+                                text: diagnostic.message.clone(),
+                                hl_group: state.diagnosticsDisplay.get(
+                                    &diagnostic.severity.unwrap_or(DiagnosticSeverity::Hint)
+                                    .to_int()?
+                                    ).ok_or_else(|| err_msg("Failed to get display"))?
+                                    .virtualTexthl.clone(),
+                            });
+                        }
                     }
                 }
+                Ok(())
             })?;
             self.set_virtual_texts(bufnr, namespace_id, &virtual_texts)?;
         }
