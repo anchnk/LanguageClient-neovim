@@ -1,4 +1,5 @@
 use super::*;
+use crate::vim::VirtualText;
 
 use crate::language_client::LanguageClient;
 use crate::lsp::notification::Notification;
@@ -151,10 +152,15 @@ impl LanguageClient {
             .as_ref(),
         )?;
 
-        let (diagnosticsSignsMax, documentHighlightDisplay): (Option<u64>, Value) = self.eval(
+        let (diagnosticsSignsMax, documentHighlightDisplay, use_virtual_text): (
+            Option<u64>,
+            Value,
+            u8,
+        ) = self.eval(
             [
                 "get(g:, 'LanguageClient_diagnosticsSignsMax', v:null)",
                 "get(g:, 'LanguageClient_documentHighlightDisplay', {})",
+                "!!s:GetVar('LanguageClient_useVirtualText')",
             ]
             .as_ref(),
         )?;
@@ -238,6 +244,7 @@ impl LanguageClient {
             state.wait_output_timeout = wait_output_timeout;
             state.hoverPreview = hoverPreview;
             state.completionPreferTextEdit = completionPreferTextEdit;
+            state.use_virtual_text = use_virtual_text == 1;
             state.loggingFile = loggingFile;
             state.loggingLevel = loggingLevel;
             state.serverStderr = serverStderr;
@@ -2232,8 +2239,13 @@ impl LanguageClient {
 
     pub fn languageClient_handleCursorMoved(&self, params: &Value) -> Fallible<()> {
         info!("Begin {}", NOTIFICATION__HandleCursorMoved);
-        let (languageId, filename, line): (String, String, u64) = self.gather_args(
-            &[VimVar::LanguageId, VimVar::Filename, VimVar::Line],
+        let (languageId, filename, bufnr, line): (String, String, i64, u64) = self.gather_args(
+            &[
+                VimVar::LanguageId,
+                VimVar::Filename,
+                VimVar::Bufnr,
+                VimVar::Line,
+            ],
             params,
         )?;
         if !self.get(|state| state.serverCommands.contains_key(&languageId))? {
@@ -2353,27 +2365,31 @@ impl LanguageClient {
                 .notify("s:AddHighlights", json!([source, highlights]))?;
         }
 
-        let namespace_id = if let Some(namespace_id) = self.get(|state| state.namespace_id)? {
-            namespace_id
-        } else {
-            let namespace_id = self.create_namespace("LanguageClient")?;
-            self.update(|state| {
-                state.namespace_id = Some(namespace_id);
-                Ok(())
-            })?;
-            namespace_id
-        };
-        let mut virtual_texts = HashMap::new();
-        self.get(|state| {
-            for ((_, line), text) in &state.line_diagnostics {
-                if *line >= visible_line_start && *line <= visible_line_end {
-                    virtual_texts.insert(*line, text.clone());
+        if self.get(|state| state.use_virtual_text)? {
+            let namespace_id = if let Some(namespace_id) = self.get(|state| state.namespace_id)? {
+                namespace_id
+            } else {
+                let namespace_id = self.create_namespace("LanguageClient")?;
+                self.update(|state| {
+                    state.namespace_id = Some(namespace_id);
+                    Ok(())
+                })?;
+                namespace_id
+            };
+            let mut virtual_texts = vec![];
+            self.get(|state| {
+                for ((_, line), text) in &state.line_diagnostics {
+                    if *line >= visible_line_start && *line <= visible_line_end {
+                        // FIXME: hl_group.
+                        virtual_texts.push(VirtualText {
+                            line: *line,
+                            text: text.clone(),
+                            hl_group: "".into(),
+                        });
+                    }
                 }
-            }
-        })?;
-        for (line, text) in &virtual_texts {
-            // FIXME
-            self.buf_set_virtual_text(1, namespace_id, *line, text, "")?;
+            })?;
+            self.set_virtual_texts(bufnr, namespace_id, &virtual_texts)?;
         }
 
         info!("End {}", NOTIFICATION__HandleCursorMoved);

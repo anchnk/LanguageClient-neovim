@@ -2,6 +2,13 @@ use super::*;
 use crate::language_client::LanguageClient;
 use crate::rpcclient::RpcClient;
 
+#[derive(Debug, Eq, PartialEq, Serialize)]
+pub struct VirtualText {
+    pub line: u64,
+    pub text: String,
+    pub hl_group: String,
+}
+
 impl LanguageClient {
     /////// Vim wrappers ///////
 
@@ -105,18 +112,14 @@ impl LanguageClient {
         self.vim()?.call("nvim_create_namespace", [name])
     }
 
-    pub fn buf_set_virtual_text(
+    pub fn set_virtual_texts(
         &self,
         buf_id: i64,
         ns_id: i64,
-        line: u64,
-        text: &str,
-        hl_group: &str,
+        virtual_texts: &[VirtualText],
     ) -> Fallible<i64> {
-        self.vim()?.call(
-            "nvim_buf_set_virtual_text",
-            json!([buf_id, ns_id, line, vec![vec![text, hl_group]], {}]),
-        )
+        self.vim()?
+            .call("s:SetVirtualTexts", json!([buf_id, ns_id, virtual_texts]))
     }
 }
 

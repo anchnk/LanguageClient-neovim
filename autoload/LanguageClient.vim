@@ -142,6 +142,19 @@ function! s:Bufnames() abort
     return map(filter(range(0,bufnr('$')), 'buflisted(v:val)'), 'fnamemodify(bufname(v:val), '':p'')')
 endfunction
 
+function! s:SetVirtualTexts(bufId, nsId, virtualTexts) abort
+    " VirtualText: map with keys line, text and hl_group.
+
+    if !exists('*nvim_buf_set_virtual_text')
+        return
+    endif
+
+    for vt in a:virtualTexts
+        echomsg string(vt)
+        call nvim_buf_set_virtual_text(a:bufId, a:nsId, vt['line'], [[vt['text'], vt['hl_group']]], {})
+    endfor
+endfunction
+
 function! s:getInput(prompt, default) abort
     call inputsave()
     let l:input = input(a:prompt, a:default)
@@ -207,7 +220,7 @@ function! s:AddHighlights(source, highlights) abort
 endfunction
 
 " Get an variable value.
-" First try buffer local, then global, then default, then v:null.
+" Get variable from uffer local, or else global, or else default, or else v:null.
 function! s:GetVar(...) abort
     let name = a:1
 

@@ -144,6 +144,7 @@ pub struct State {
     pub wait_output_timeout: Duration,
     pub hoverPreview: HoverPreviewOption,
     pub completionPreferTextEdit: bool,
+    pub use_virtual_text: bool,
 
     pub loggingFile: Option<String>,
     pub loggingLevel: log::LevelFilter,
@@ -213,6 +214,7 @@ impl State {
             wait_output_timeout: Duration::from_secs(10),
             hoverPreview: HoverPreviewOption::default(),
             completionPreferTextEdit: false,
+            use_virtual_text: true,
             loggingFile: None,
             loggingLevel: log::LevelFilter::Warn,
             serverStderr: None,
